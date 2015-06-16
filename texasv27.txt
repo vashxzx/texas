@@ -1,0 +1,649 @@
+#include <stdio.h>
+#include<string.h>
+//#include<memory.h>
+//#include<stdlib.h>
+//#include<sys/timeb.h>
+//一副牌的值和花色
+ char *deck="23456789TJQKA";
+ char *suit="CDHS";
+ //手牌
+ int deal[7];
+ //手牌中每种点数的重复次数
+ int count[13]={0};
+ //手牌中每种花色的重复次数
+ int count_suit[4]={0};
+ //指向数组deal一行的指针
+ int *p_deal;
+ int i,j; //辅助变量
+ char card[2]; //一张牌
+ //当前要出的赌注（call ||raise）
+ int bet=10;
+//拥有的筹码
+ int sum=5000;
+ int pork_max(int *deal,int n,int m)//为了计算公共牌值最大的
+ {
+     int max=deal[n]>>2;
+     for(int j=n+1;j<=m;++j)
+         if((deal[j]>>2)>max)
+             max=deal[j]>>2;
+     return max;
+ }
+
+ int suit_num(int *deal,int n,int m )//判断m-n+1张牌的花色
+ {
+     int five=0;
+     int four=0;
+     int three=0;
+     int two=0;
+     int count_suit_sub[4]={0};
+     for(int j=n;j<=m;++j)
+         ++count_suit_sub[deal[j]&3];
+     for(int j=0;j<4;++j)
+     {
+         if(5==count_suit_sub[j])
+             five=1;
+         else if(4==count_suit_sub[j])
+             four=1;
+         else if(3==count_suit_sub[j])
+             three=1;
+         else if(2==count_suit_sub[j])
+             two=1;
+     }
+     if(five)
+         return 5;
+     else if(four)
+         return 4;
+     else if(three)
+         return 3;
+     else if(two)
+         return 2;
+     else
+     return 1;//五张公共牌不会出现1的情况
+ }
+
+ int pork_same_num(int *deal,int n,int m)//判断m-n+1张牌的牌型
+ {
+
+     int count_sub[12]={0};
+     int four=0;
+     int three=0;
+     int two=0;
+     int straight=0;
+     for(int j=n;j<=m;++j)
+         ++count_sub[deal[j]>>2];
+     if(m-n+1>=5)
+     {
+         for(int j=0;j<=8;++j)
+         //A2345也算顺子
+         if(count_sub[j]==1&&count_sub[j+1]==1&&count_sub[j+2]==1&&count_sub[j+3]==1&&count_sub[j+4]==1||count_sub[0]==1&&count_sub[1]==1&&count_sub[2]==1&&count_sub[3]==1&&count_sub[12]==1)
+                straight=1;//顺子
+      }
+     for(int i=0;i<=12;++i)
+         {
+             if(4==count_sub[i])
+                 four=1;
+             else if(3==count_sub[i])
+                 three =1;
+             else if(2==count_sub[i])
+                 ++two;
+        }
+     if(four)
+         return 6;
+     else if(three&&two)
+         return 5;
+     else if(straight)
+         return 4;
+     else if(three)
+         return 3;
+     else if(2==two)
+         return 2;
+     else if(two)
+         return 1;
+     else
+         return 0;
+ }
+
+ void call(const char* c="")//跟注，别人出多少我就出多少！
+ {
+     printf("%s\n",c);
+ }
+
+ void raise(const char* c="")//出2倍以上的注！
+ {
+     printf("%s\n",c);
+ }
+
+ void fold(const char *c="")//弃牌！
+ {
+     printf("%s,丫给老子等着！！！\n",c);
+ }
+ void judgemypork(int pork_num)
+  {
+      int rate_sum_bet=sum/bet;//拥有的筹码与要出的筹码的比值
+      int pairs_num=0;//对牌数
+      int three_num=0;//三条数2.11
+      int four_num=0;//四条数0.024
+      int flush_num=0;//同花数0.197
+      int straight_num=0;//顺子数0.39
+
+      //***************************************************我是分割线
+
+  if(2==pork_num)//当前有两张牌
+  {
+    for(i=0;i<2 &&(scanf("%s",card)!=EOF);++i)
+
+      deal[i]=((strchr(deck,card[0])-deck)<<2)+(strchr(suit,card[1])-suit);
+
+   p_deal=deal;
+
+   for(j=0;j<2;j++)
+    ++count[p_deal[j]>>2];//利用计数器来记录每张牌重复的个数
+
+   for(j=12;j>=0;--j) //记录了对牌对应count的下标 j
+     if(2==count[j])
+     {
+          pairs_num=1;
+          break;
+     }
+
+     if(pairs_num&&j>=9)//两张牌是对牌且牌值大于J
+     {
+         if(rate_sum_bet<=20)
+              call();
+         else
+             raise();
+     }
+     else if(pairs_num)
+     {
+         if(rate_sum_bet>=30)//拥有的筹码与要出的筹码的比值
+             call();
+         else
+             fold();
+
+     }
+     else//木有对子
+     {
+         if(rate_sum_bet>20)//2000/100=20
+             call();
+         else
+             fold();
+     }
+   }
+    //**********************************************************************我是分割线
+
+   if(5==pork_num)
+   {
+
+       for(i=0;i<5 &&(scanf("%s",card)!=EOF);++i)
+         deal[i]=((strchr(deck,card[0])-deck)<<2)+(strchr(suit,card[1])-suit);
+       p_deal=deal;
+
+       for(j=0;j<5;++j)//五张牌花色计数
+           ++count_suit[p_deal[j]&3];
+
+       for(j=0;j<5;j++)//五张牌点数计数
+         ++count[p_deal[j]>>2];
+
+       for(j=0;j<4;++j)
+       {
+        if(5==count_suit[j])
+             flush_num=1;//同花
+       }
+
+       for(j=0;j<=8;++j)
+           //A2345也算顺子
+           if(count[j]==1&&count[j+1]==1&&count[j+2]==1&&count[j+3]==1&&count[j+4]==1||count[0]==1&&count[1]==1&&count[2]==1&&count[3]==1&&count[12]==1)
+                  straight_num=1;//顺子
+
+       for(j=12;j>=0;--j)
+       {
+         if(count[j]==2)
+               ++pairs_num;
+         else if(3==count[j])
+             three_num=1;
+         else if(4==count[j])
+             four_num=1;
+
+       }
+         if(flush_num&&straight_num)//同花顺
+                   raise("同花顺，哇咔咔！！+++");
+
+          else if(four_num)//五张时只有一人能构成四条
+               call("四条，跟forever!");
+
+          else if(three_num&&pairs_num==1)//有葫芦时若比值大于100则加注
+           {
+               if(rate_sum_bet>=100)
+                   raise("老子有葫芦！我加！");
+               else
+                   call("老子有葫芦！我加跟");
+           }
+
+           else if(flush_num)
+                   call("同花哟~gggg");
+
+           else if(three_num)//三条几率挺高的，需要分情况讨论
+           {
+               if(deal[0]==deal[1])//三条时若比值大于10且底牌是对牌则跟
+               {
+                   if(rate_sum_bet>=10)
+                   call("老子有三条！我加！");
+                   else //三条时若比值大于10即使底牌是对牌则弃牌
+                   fold();
+               }
+               else if(deal[2]==deal[3]&&deal[2]==deal[4])//三条在公共牌
+               {
+                  if(rate_sum_bet>=30)
+                   call("老子有三条！我跟！");
+                  else
+                   fold();
+               }
+               else//三条中一对在公共牌
+               {
+                  if(rate_sum_bet>=20)
+                   call("老子有三张！我跟！");
+                  else
+                   fold();
+               }
+
+           }
+
+             else if(pairs_num==2)//有两对时若比值大于10则跟否则器弃牌
+           {
+               if(rate_sum_bet>=10)
+                   call("两对，我跟！");
+               else
+                   fold();
+           }
+
+            else if(pairs_num==1&&((deal[0]>>2)==(deal[1]>>2)))//两张牌中有一对且对牌在底牌中
+           {
+               if(rate_sum_bet<20)
+                   fold();
+               else
+                   call("对子在底牌中，我跟！");
+           }
+           else if(pairs_num==1)//对子在公共牌中或底牌与公共牌组成对子
+           {
+               if(rate_sum_bet>=30)
+                   call("只有一对哎");
+               else
+                   fold();
+           }
+
+           else
+           {
+               if(straight_num)
+                   call("顺子啊！gggg");
+               else//高牌直接弃牌，因为到这里高牌几乎必输无疑
+                   fold();
+           }
+   }
+   //*************************************************************************我就是分割线，对六张牌的决策
+   if(6==pork_num)
+   {
+       for(i=0;i<6 &&(scanf("%s",card)!=EOF);++i)
+         deal[i]=((strchr(deck,card[0])-deck)<<2)+(strchr(suit,card[1])-suit);
+       p_deal=deal;
+
+       for(j=0;j<6;++j)//6张牌花色计数
+           ++count_suit[p_deal[j]&3];
+
+       for(j=0;j<6;j++)//6张牌点数计数
+         ++count[p_deal[j]>>2];
+
+       for(j=0;j<4;++j)
+       {
+        if(5<=count_suit[j])
+             flush_num=1;//同花
+       }
+
+       for(j=0;j<=8;++j)
+           //A2345也算顺子
+           if(count[j]&&count[j+1]&&count[j+2]&&count[j+3]&&count[j+4]||count[0]==1&&count[1]==1&&count[2]==1&&count[3]==1&&count[12]==1)
+                  straight_num=1;//顺子
+
+       for(j=12;j>=0;--j)
+       {
+         if(2==count[j])
+             ++pairs_num;
+         else if(3==count[j])
+             three_num=1;
+         else if(4==count[j])
+             four_num=1;
+
+       }
+         if(flush_num&&straight_num)//同花顺
+                raise("同花顺，哇咔咔！！+++");
+
+          else if(four_num)//四条复杂，分以下情况
+          {
+              int pork_same_number=pork_same_num(deal,2,5);//公共牌牌型
+              if(2==pork_same_number)//底牌和公共牌各两张，对方也可能有四条，比如我是33，对方44，公共为3344
+               call("四条!");
+              else if(3==pork_same_number )//三张一样的在公共牌中，其他人绝不可能组成四条，但在发第七张牌的时候或许能成为同花顺，不过几率几乎为0
+                call("四条，跟！");
+              else if(4==pork_same_number &&((deal[0]>>2)==12||(deal[1]>>2)==12))//四条出现在公共牌中若我有A，此剧必胜！
+                  raise("四条和A，加！");
+              else//大家都是四条，但是你手里没有A，弃牌吧
+                  fold();
+         }
+          else if(three_num&&pairs_num==1)//有葫芦时，也要分情况
+           {
+                int pork_same_number=pork_same_num(deal,2,5);//公共牌中点数相同的牌的数目
+				if((deal[0]>>2)==(deal[1]>>2))//底牌相等
+				{
+					if(3==pork_same_number)//公共牌有三条,对方有大葫芦和四条概率相当大呢22 3334
+					{
+						if(rate_sum_bet<=5)
+							fold("葫芦，但是你可能有四条");
+						else
+							call("葫芦赌一把");
+					}					
+					else//22 2334
+					{
+						if(rate_sum_bet<=5)
+							fold("葫芦，但是你可能有四条");
+						else
+							call("葫芦赌一把");
+					}					
+				}
+				else//23 3324对方现在除了同花顺不可能有比葫芦更大的
+					raise("极品葫芦！！！");
+           }
+
+           else if(flush_num)//同花
+           {
+			   int pork_same_number=pork_same_num(deal,2,5);//公共牌中点数相同的牌的数目
+               if((deal[0]&3)==(deal[1]&3))
+			   {
+				   if(!pork_same_number )
+					 call("不错的同花哟~gggg");
+				   else
+					 call("suiji");
+			   }                   
+               else//公共牌为3c5c7c8c，对手可能为同花顺
+                   call("一般的同花~");
+          }
+
+		  else if(straight_num)
+                   call("顺子啊！gggg");//有点赌了，因为可能是23 4567 对手可能是大顺子，而且当23 4566时可能是葫芦或者四条，赌了！！！
+
+           else if(three_num)//三条分下面情况
+           {
+               if((deal [0]>>2)==(deal[1]>>2))//2张同点数的底牌和一张公共组成三条22 2456
+               {
+				   int suit_number=suit_num(deal,2,5);
+				   if(suit_number<=3)//对手可能顺子，不考虑了
+					   call("不错的三条");
+				   else
+					   fold("三条但是公共牌是四张同花");//但是对手可能成为同花						
+               }
+               else//23 22478
+                   call("赌");
+           }
+
+             else if(pairs_num>=2)//有两对,六张牌有可能出现三对
+           {
+			    int pork_same_number=pork_same_num(deal,2,5);//公共牌中点数相同的牌的数目
+              if((deal [0]>>2)==(deal[1]>>2))//底牌相等
+			  {
+				  if(2==pork_same_number)//22 3344 对手很可能有葫芦三条四条
+					  fold("两对，但是对手可能有三条葫芦四条");
+				  else//22 3345 对手可能有三条顺子同花葫芦四条，最后或许能葫芦，可以弃牌
+					  call("小赌,对手可能有三条顺子同花葫芦四条，最后或许能葫芦，可以弃牌");
+			  }                  
+               else
+			   {
+				    if(pork_same_number)//23 2344对手可能是三条顺子同花葫芦四条，最后或许能葫芦，可以弃牌
+						 call("小赌,对手可能是三条顺子同花葫芦四条，最后或许能葫芦，可以弃牌");
+					else//23 2345对手可能是三条顺子同花
+					{
+						if(rate_sum_bet<=10)
+							fold("两对，对手可能是三条顺子同花");
+						else
+							call("两对，对手可能是三条顺子同花");
+					}
+			  }                 
+           }
+
+            else if(pairs_num==1)//一对
+           {
+			    int pork_same_number=pork_same_num(deal,2,5);//公共牌牌型
+				if(pork_same_number)//对子在公共牌中
+					fold();//果断弃牌不犹豫，有第七牌的时候最多可能组成2对，顺子同花，几率太小了~
+				else//对子在手中
+				{
+					if(rate_sum_bet<=10)
+						fold("1对，对手可能是三条顺子同花");
+					else
+						call("1对，对手可能是三条顺子同花");
+				}
+           }
+           
+           else                     
+              //高牌直接弃牌，因为到这里高牌几乎必输无疑
+                   fold();     
+   }
+    //**************************************************分割线=^ω^=！下面是对七张牌的决策~
+   if(7==pork_num)
+   {
+       for(i=0;i<7 &&(scanf("%s",card)!=EOF);++i)
+         deal[i]=((strchr(deck,card[0])-deck)<<2)+(strchr(suit,card[1])-suit);
+       p_deal=deal;
+
+       for(j=0;j<7;++j)//7张牌花色计数
+           ++count_suit[p_deal[j]&3];
+
+       for(j=0;j<7;j++)//7张牌点数计数
+         ++count[p_deal[j]>>2];
+
+       for(j=0;j<4;++j)
+       {
+        if(5<=count_suit[j])
+             flush_num=1;//同花
+       }
+
+       for(j=0;j<=8;++j)
+           if(count[j]&&count[j+1]&&count[j+2]&&count[j+3]&&count[j+4]||count[0]==1&&count[1]==1&&count[2]==1&&count[3]==1&&count[12]==1)//A2345也算顺子
+                  straight_num=1;//顺子
+
+
+       for(j=12;j>=0;--j)
+       {
+         if(count[j]==2)
+               ++pairs_num;
+         else if(3==count[j])
+             three_num=1;
+         else if(4==count[j])
+             four_num=1;
+
+       }
+           if(flush_num&&straight_num)//同花顺，大家都是同花顺，对方是更大同花顺几率几乎为0啊~
+                call("同花顺，哇咔咔！！+++");
+
+
+          else if(four_num)//四条复杂，分以下情况
+          {
+              int pork_same_number=pork_same_num(deal,2,6);//公共牌中可以组成的牌型
+              if(1==pork_same_number)//底牌和公共牌各两张，对方也可能有四条，比如我是33，对方44，公共为33445；对方可能组成同花顺如33456 +78
+                    call("四条!");
+              else if(3==pork_same_number )//三张一样的在公共牌中
+                  {
+                    if(deal[0]==deal[1])//底牌相等，说明公共牌有一对和底牌相等的底牌为33，公共为44433，对方可能组成4444的四条；对方可能组成同花顺
+                        call("四条d0=d1，跟！");
+                    else//底牌不同牌型为34 33355，对方可能为5555；对方可能组成同花顺
+                        call("四条d0！=d1，跟！");
+                    }
+              else if(6==pork_same_number &&((deal[0]>>2)==12||(deal[1]>>2)==12))//四条出现在公共牌中若我有A，此局必胜；对方无法组成同花顺
+                  raise("四条和A，加！");
+              else//大家都是四条，但是你手里没有A，弃牌吧
+                  fold();
+         }
+
+          else if(three_num&&pairs_num)//葫芦复杂，分以下情况
+           {
+               int pork_same_number=pork_same_num(deal,2,6);//公共牌可以组成的牌型
+               //公共牌葫芦，对方很可能有葫芦四条，但是绝不可能有同花顺
+               if(5==pork_same_number)
+               {
+                   if(deal[0]==deal[1]&&(deal[0]>>2)==12)
+                       call("公共牌葫芦我有对A");
+                   else
+                       fold("都是葫芦");
+               }
+               //公共牌是三条，对方可能有葫芦,四条或者同花顺
+               else if(3==pork_same_number)
+               {
+                   if(rate_sum_bet >=10)
+                       call("葫芦，赌一把");
+                   else
+                       fold("葫芦，对方可能有四条或同花顺");
+               }
+               //公共牌是两对对方可能有葫芦，四条或者同花顺，这里deal[0],和deal[1]对比也应该加进去
+               else if(2==pork_same_number)
+               {
+                    if(rate_sum_bet >=10)
+                       call("葫芦，赌一把");
+                   else
+                       fold("葫芦，对方可能有四条或同花顺");
+               }
+               //公共牌是一对，对方可能有葫芦，四条或者同花顺，这里deal[0],和deal[1]对比也应该加进去
+               else
+                   call("应该能赢的葫芦");
+           }
+
+           else if(flush_num)//同花
+           {
+               int suit_number=suit_num(deal,2,6);
+               //同花出现在公共牌中，大家都是同花（公共牌点数各不相同），则对方最多只能是更大的同花同花顺
+               if(5==suit_number)
+               {
+                   //底牌花色至少一张与公共牌相同并且牌点数为A,k
+                   if(((deal[0]&3)==(deal[3]&3)||(deal[1]&3)==(deal[3]&3))&&(((deal[0]>>2)>=11)||((deal[1]>>2)>=11)))
+                       call("同花顺中我是最大的");
+                   else
+                       fold();
+
+               }
+               //底牌中花色不同，说明公共牌四张花色相同
+               else if((p_deal[0]&3)!=(p_deal[1]&3))
+               {
+                  int pork_same_number=pork_same_num(deal,2,6);//公共牌可以组成的牌型
+                  if(!pork_same_number)//若公共牌为高牌，则除非对方是同花顺（若公共牌差一两张可以组成同花顺，可以赌一次，若只是四张同花不顺，肯定要跟的）
+                      call("老子是同花，赌你没有同花顺");
+                  else//公共牌有一对，对方可能有同花顺或者葫芦
+                  {
+                      if(rate_sum_bet<=5)
+                          fold("虽然老子有同花，搞不好你有葫芦呢");
+                      else
+                          call("老子是同花，赌你没有葫芦和同花顺！");
+                  }
+               }
+               //底牌中花色相同
+               else if((p_deal[0]&3)==(p_deal[1]&3))
+               {
+                    int pork_same_number=pork_same_num(deal,2,6);//公共牌可以组成的牌型
+                    if(!pork_same_number)//若公共牌为高牌
+                        call("老子是底牌同花，赌你没有同花顺");
+
+                    else if(1==pork_same_number)//若公共牌有一对
+                        call("老子是底牌同花，赌你没有同花顺和葫芦和四条");
+
+                    else if(2==pork_same_number)//若公共牌有2对,对方有葫芦四条几率非常高
+                    {
+                        if(rate_sum_bet<=5)
+                            fold("虽然老子有同花，搞不好你有葫芦呢");
+                        else
+                            call("老子是同花，赌你没有葫芦和同花顺！");
+                    }
+
+                    else if(3==pork_same_number)//若公共牌有3条，对方有葫芦四条几率非常高
+                    
+                            fold("虽然老子有同花，搞不好你有葫芦,四条呢");                  
+               }
+           }
+
+           else  if(straight_num)//顺子
+           {
+               int pork_same_number=pork_same_num(deal,2,6);//公共牌可以组成的牌型
+               int suit_number=suit_num(deal,2,6);//公共牌花色数
+			   int max_number=pork_max(deal,2,6);//公共牌点数最大值
+               if(4==pork_same_number)//顺子在公共牌中，对方可能有更大的顺子同花或者同花顺，对手不可能组成葫芦和四条
+               {
+                   if(2==suit_number)//公共牌中只有两张花色相同的牌，不可能组成同花顺
+					   if(((deal[0]>>2)-max_number==1)||((deal[1]>>2)-max_number==1))
+						   call("我有最大顺子，对手没有同花顺");
+					   else
+						   fold("大家都是顺");
+				   else //公共牌中只有3张以上花色相同的牌
+					   fold("大家都是顺，有人可能组成同花顺");//这里加入随机跟或者弃牌较好					   
+               }
+			   else if(!pork_same_number)//公共牌组成高牌
+				   call("我有顺子，对手没有顺");
+			   else if(1==pork_same_number)//公共牌有一对，对可能有同花，葫芦，四条，同花顺23446
+				   call("suijiqipai");//随机弃牌
+			   else if(2==pork_same_number||3==pork_same_number)
+				   fold("顺子，但是对手葫芦几率非常大");//23434;23444
+           }
+
+           else if(three_num)//三条
+           {
+               int pork_same_number=pork_same_num(deal,2,6);//公共牌可以组成的牌型
+               if(3==pork_same_number)//三条出现在公共牌中，果断弃牌，因为自己此时最大等级牌型为三条而所有人都是三条甚至更大
+                   fold("all are three!");
+               else if(2==pork_same_number)//公共牌为两对
+               {
+                   if(rate_sum_bet<=10)
+                       fold("其他人可能为三条以上!!");//对方可能牌型为三条以上
+                   else
+                       call();
+               }
+               else if(1==pork_same_number)//公共牌为一对
+               {
+                   if(rate_sum_bet<=5)
+                       fold("其他人可能为三条以上!");//对方可能牌型为三条以上
+                   else
+                       call();
+               }
+               else if(0==pork_same_number)
+                   call("三条且公共牌为杂牌，赌一把！");
+
+           }
+
+             else if(pairs_num==2)//两对
+           {
+               int pork_same_number=pork_same_num(deal,2,6);//公共牌可以组成的牌型
+               if(2==pork_same_number)//公共牌是两对
+                   fold("all are two");
+               else if(pork_same_number)//公共牌为一对
+               {
+                   if(rate_sum_bet<=10)//(2000/200)
+                       fold("两对，对方可能有三条以上");
+                   else
+                       call("两对，我跟着试试");
+               }
+               else if(!pork_same_number)//公共牌是高牌
+               {
+                   if(rate_sum_bet<=10)
+                       fold("两对，对方可能有三条以上");
+                   else
+                       call("两对，我跟着试试");
+               }
+           }
+            else if(pairs_num==1)//一对
+                   fold("只有一对啊");//对子在公共牌中，弃牌；对子在自己手中，弃牌；对子由底牌和公共牌组成，弃牌
+
+           else//高牌直接弃牌，因为到这里高牌必输无疑，除非天降狗屎运！
+               fold("苍天啊！！！");
+   }
+
+ }//函数末尾
+int main()
+{
+
+	judgemypork(6);
+return 0;
+
+}
+

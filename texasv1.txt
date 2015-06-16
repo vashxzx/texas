@@ -1,0 +1,198 @@
+#include <stdio.h>
+#include<string.h>
+#include<memory.h>
+#include<stdlib.h>
+#include<sys/timeb.h>
+//一副牌的值和花色
+ char *deck="23456789TJQKA";
+ char *suit="CDHS";
+ //手牌
+ int deal[5];
+ //手牌中每种牌值的重复次数
+ int count[13]={0};
+ //手牌中每种花色的重复次数
+ int count_suit[4]={0};
+ //指向数组deal一行的指针
+ int *p_deal;
+ int i,j; //辅助变量
+ char card[10]; //一张牌
+ //当前要出的赌注（call raise）
+ int bet=10;
+//拥有的筹码
+ int sum=5000;
+ void call(const char* c="")//跟注，别人出多少我就出多少！
+ {
+     printf("%s\n",c);
+ }
+
+ void raise(const char* c="")//出2倍以上的注！
+ {
+     printf("%s\n",c);
+ }
+
+ void fold()//弃牌！
+ {
+     printf("丫给老子等着！！！\n");
+ }
+ void judgemypork(int pork_num)
+  {
+      int rate_sum_bet=sum/bet;//拥有的筹码与要出的筹码的比值
+      int pairs_num=0;//对牌数
+      int three_num=0;//三条数2.11
+      int four_num=0;//四条数0.024
+      int flush_num=0;//同花数0.197
+      int straight_num=0;//顺子数0.39
+
+      //***************************************************我是分割线
+
+  if(2==pork_num)//当前有两张牌
+  {
+    for(i=0;i<2 &&(scanf("%s",card)!=EOF);i++)
+      deal[i]=((strchr(deck,card[0])-deck)<<2)+(strchr(suit,card[1])-suit);
+
+   p_deal=deal;
+
+   for(j=0;j<2;j++)
+    ++count[p_deal[j]>>2];//利用计数器来记录每张牌重复的个数
+
+   for(j=12;j>=0;--j)
+   {
+     if(2==count[j])
+         pairs_num=1;
+
+   }
+
+     if(pairs_num&&j>=6)//两张牌是对牌且牌值大于8
+     {
+         if(rate_sum_bet<=200)
+              call();
+         else
+             raise();
+     }
+     else if(pairs_num)
+     {
+         if(rate_sum_bet>=50)//拥有的筹码与要出的筹码的比值
+             call();
+         else
+             fold();
+
+     }
+     else//木有对子
+     {
+         if(rate_sum_bet>500)
+             call();
+         else
+             fold();
+     }
+   }
+    //**************************************************我是分割线
+
+   if(5==pork_num)
+   {
+
+       for(i=0;i<5 &&(scanf("%s",card)!=EOF);i++)
+         deal[i]=((strchr(deck,card[0])-deck)<<2)+(strchr(suit,card[1])-suit);
+       p_deal=deal;
+
+       for(j=0;j<5;++j)//五张牌花色计数
+           ++count_suit[p_deal[j]&3];
+
+       for(j=0;j<5;j++)//五张牌点数计数
+         ++count[p_deal[j]>>2];
+
+       for(j=0;j<4;++j)
+          {
+             if(5==count_suit[j])
+                 flush_num=1;//同花
+          }
+
+       for(j=0;j<=8;++j)
+              if(count[j]==1&&count[j+1]==1&&count[j+2]==1&&count[j+3]==1&&count[j+4]==1)
+                  straight_num=1;//顺子
+
+       for(j=12;j>=0;--j)
+       {
+         if(count[j]==2)
+               ++pairs_num;
+         else if(3==count[j])
+             three_num=1;
+         else if(4==count[j])
+             four_num=1;
+
+       }
+         if(flush_num&&straight_num)//同花顺
+                   raise("同花顺，哇咔咔！！+++");
+
+          else if(four_num)
+
+               call("四条，跟forever!");
+
+          else if(three_num&&pairs_num==1)//有葫芦时若比值大于100则加注
+           {
+               if(rate_sum_bet>=100)
+                   raise("老子有葫芦！我加！");
+               else
+                   call("老子有葫芦！我加跟");
+           }
+
+           else if(flush_num)
+
+                   call("同花哟~gggg");
+
+           else if(three_num)
+           {
+               if(rate_sum_bet>=100)//有三张点数一样的时若比值大于100则加注
+                   raise("老子有三张！我加！");
+               else
+                   call("老子有三张！我跟！");
+           }
+
+             else if(pairs_num==2)//有两对时若比值大于100则加注
+           {
+               if(rate_sum_bet>=100)
+                   raise("两对，我加！");
+               else
+                   call("两对，我跟！");
+           }
+
+            else if(pairs_num==1&&j>=6)//两张牌中有一对且牌值大于8
+           {
+               if(rate_sum_bet<=50)
+                   fold();
+               else
+                   call("对子挺大，我跟！");
+           }
+           else if(pairs_num==1)//有一对但是小于8
+           {
+               if(rate_sum_bet>=100)
+                   call("只有一对哎");
+               else
+                   fold();
+
+           }
+
+           else
+           {
+
+               if(straight_num)
+                   call("顺子啊！gggg");
+               else//高牌直接弃牌
+                   fold();
+
+
+           }
+
+   }
+
+
+  }
+int main()
+{
+
+judgemypork(5);
+
+
+return 0;
+
+}
+

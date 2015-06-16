@@ -1,0 +1,132 @@
+#include <stdio.h>
+
+int all_pork[51]={0};
+int deal[7];
+
+int dealtmp[7];
+
+
+
+void deal_dealtmp(int *deal,int *dealtmp,int n)//n为公共牌个数
+{
+    for(int i=2;i<2+n;++i)
+        dealtmp[i]=deal[i];
+}
+
+void set_all_pork(int *deal,int pork_num)
+{
+	for(int i=0;i<pork_num;++i)
+        ++all_pork[deal[i]];
+}
+int judge_pork(int *deal,int pork_num)//m为牌数
+{
+	int count[13]={0};//手牌中每种点数的重复次数
+
+	int count_suit[4]={0};//手牌中每种花色的重复次数
+
+	int j;
+	int pairs_num=0;//对牌数
+    int three_num=0;//三条数2.11
+    int four_num=0;//四条数0.024
+    int flush_num=0;//同花数0.197
+    int straight_num=0;//顺子数0.39
+    if(5==pork_num)
+      {
+
+          for(  j=0;j<5;++j)//五张牌花色计数
+              ++count_suit[deal[j]&3];
+
+          for( j=0;j<5;++j)//五张牌点数计数
+            ++count[deal[j]>>2];
+
+          for( j=0;j<4;++j)
+          {
+           if(5==count_suit[j])
+                flush_num=1;//同花
+          }
+
+          for(j=0;j<=8;++j)
+              //A2345也算顺子
+              if((count[j]==1&&count[j+1]==1&&count[j+2]==1&&count[j+3]==1&&count[j+4]==1)||(count[0]==1&&count[1]==1&&count[2]==1&&count[3]==1&&count[12]==1))
+                     straight_num=1;//顺子
+
+          for(j=12;j>=0;--j)
+          {
+            if(count[j]==2)
+                  ++pairs_num;
+            else if(3==count[j])
+                three_num=1;
+            else if(4==count[j])
+                four_num=1;
+
+          }
+            if(flush_num&&straight_num)//同花顺
+                return 8;
+
+             else if(four_num)//四条
+                return 7;
+
+             else if(three_num&&pairs_num==1)//葫芦
+                 return 6;
+
+             else if(flush_num)
+                 return 5;
+
+			 else if(straight_num)
+				 return 4;
+
+             else if(three_num)//三条
+                 return 3;
+
+             else if(pairs_num==2)
+                return 2;
+
+             else if(pairs_num==1)//对子
+                return 1;
+             else
+                return 0;
+      }
+}
+double gailv(int *deal,int *dealtmp,int n)//n表示公共牌个数
+{
+	int k=0;
+    int myrank=judge_pork(deal,2+n);
+    double upper_rank_num=0.0;
+    for(int i=0;i<51;++i)
+    {
+		
+        if(all_pork[i])
+            continue;
+		 dealtmp[0]=i;
+        for(int j=i+1;j<=51;++j)
+        {
+			
+            if(all_pork[j])
+                continue;          
+            dealtmp[1]=j;
+			//printf("%5d   %5d",k++,judge_pork(dealtmp,5));
+            if(judge_pork(dealtmp,5)>=myrank)
+                ++upper_rank_num;
+			//printf("     %d %d %d %d %d\n",dealtmp[0],dealtmp[1],dealtmp[2],dealtmp[3],dealtmp[4]);
+			/*printf("   %d\n",k++);*/
+        }		
+    }
+  return upper_rank_num/1081;
+}
+int main()
+{
+	
+    int a[7]={2,3,4,5,32};
+    int b[7]={0};
+	int c[7]={0,6,4,5,32};
+	set_all_pork(a,5);
+    deal_dealtmp(a,b,3);
+	
+	/*double x=gailv(a,b,3);
+	printf("%f",x);*/
+	/*int myrank=judge_pork(c,5);
+	printf("%d",myrank);*/
+	double d=gailv(a,b,3);
+	printf("%f",d);
+        return 0;
+}
