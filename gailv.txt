@@ -1,3 +1,4 @@
+//by xzx 2015/5/16
 #include <stdio.h>
 
 int all_pork[51]={0};
